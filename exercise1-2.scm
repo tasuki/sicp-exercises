@@ -1,64 +1,8 @@
+(import (chicken random))
+(import (chicken time))
+
 (define (square x)
   (* x x))
-
-(define (sum-of-squares x y)
-  (+ (square x) (square y)))
-
-; 1.3
-(define (two-larger-squares x y z)
-  (cond ((and (< x y) (< x z)) (sum-of-squares y z))
-        ((and (< y x) (< y z)) (sum-of-squares x z))
-        (else (sum-of-squares x y))))
-
-; Newton square root thing 
-(define (sqrt x)
-  (define (sqrt-iter guess)
-    ;(print guess)
-    (if (good-enough? guess)
-        guess
-        (sqrt-iter (improve guess))))
-
-  (define (improve guess)
-    (average guess (/ x guess)))
-
-  (define (average x y)
-    (/ (+ x y) 2))
-
-  (define (good-enough? guess)
-    (< (abs (- (square guess) x)) 0.001))
-
-  (sqrt-iter 1.0))
-
-;; Evi il
-;(define (new-if predicate then-clause else-clause)
-;  (cond (predicate then-clause)
-;        (else else-clause)))
-;
-;(define (sqrt-iter guess x)
-;  (new-if (good-enough? guess x)
-;          guess
-;          (sqrt-iter (improve guess x) x)))
-
-
-; 1.7
-(define (cube x)
-  (* x x x))
-
-(define (cube-root x)
-  (define (cube-iter guess)
-    ;(print guess)
-    (if (good-enough? guess)
-        guess
-        (cube-iter (improve guess))))
-
-  (define (improve guess)
-    (/ (+ (/ x (* guess guess))
-          (* 2 guess))
-       3))
-
-  (define (good-enough? guess)
-    (< (abs (- (cube guess) x)) 0.001))
-  (cube-iter 1.0))
 
 ; 1.10
 (define (ackerman x y)
@@ -188,6 +132,8 @@
         ((even? b) (double (mul-fast a (halve b))))
         (else (+ a (mul-fast a (- b 1))))))
 
+; 1.18
+
 ; 3 * 8
 ; (double 3) * 4
 ; 6 * 4
@@ -210,3 +156,86 @@
           ((even? b) (iter n (double a) (halve b)))
           (else (iter (+ n a) a (- b 1)))))
   (iter 0 a b))
+
+; 1.19
+
+(define (fib n)
+  (fib-iter 1 0 0 1 n))
+(define (fib-iter a b p q count)
+  (cond ((= count 0) b)
+        ((even? count)
+         (fib-iter a
+                   b
+                   (+ (square p) (square q))
+                   (+ (* 2 p q) (square q))
+                   (/ count 2)))
+        (else (fib-iter (+ (* b q) (* a q) (* a p))
+                        (+ (* b p) (* a q))
+                        p
+                        q
+                        (- count 1)))))
+
+; 1.21
+
+(define (smallest-divisor n) (find-divisor n 2))
+
+(define (find-divisor n test-divisor)
+  (cond ((> (square test-divisor) n) n)
+        ((divides? test-divisor n) test-divisor)
+        (else (find-divisor n (+ test-divisor 1)))))
+
+(define (divides? a b) (= (remainder b a) 0))
+
+(define (prime? n)
+  (= n (smallest-divisor n)))
+
+(define (expmod base exp m)
+  (cond ((= exp 0) 1)
+        ((even? exp)
+         (remainder
+           (square (expmod base (/ exp 2) m))
+           m))
+        (else
+          (remainder
+            (* base (expmod base (- exp 1) m))
+            m))))
+
+(define (fermat-test n)
+  (define (try-it a)
+    (= (expmod a n n) a))
+  (try-it (+ 1 (pseudo-random-integer (- n 1)))))
+
+(define (fast-prime? times n)
+  (cond ((= times 0) #t)
+        ((fermat-test n) (fast-prime? (- times 1) n))
+        (else #f)))
+
+(define (fast-prime-thousand? n)
+  (fast-prime? 1000 n))
+
+(define (fast-prime-ten? n)
+  (fast-prime? 10 n))
+
+; 1.22
+
+(define (timed-prime-test n prime-test-fun)
+  (start-prime-test n (current-milliseconds) prime-test-fun))
+
+(define (start-prime-test n start-time prime-test-fun)
+  (if (prime-test-fun n)
+      (report-prime n (- (current-milliseconds) start-time))))
+
+(define (report-prime n elapsed-time)
+  (print " *** ")
+  (print n)
+  (print elapsed-time))
+
+(define (search-for-primes from to prime-test-fun)
+  (define (iter n)
+    (cond ((< n to)
+           (timed-prime-test n prime-test-fun)
+           (iter (+ n 1)))))
+  (iter from))
+
+(define (test-hundred-for-primality from prime-test-fun)
+  (search-for-primes from (+ from 100) prime-test-fun))
