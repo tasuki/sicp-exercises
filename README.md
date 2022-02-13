@@ -1,7 +1,17 @@
 # SICP exercises
 
-Using Chicken scheme...
+
+## Setup
+
+If on Ubuntu, install Chicken scheme:
 
 ```
-apt install chicken-bin
+$ apt install chicken-bin
+```
+
+## Run
+
+```
+$ csi
+#> ,ln exerciseX-X.csm
 ```
